@@ -1,0 +1,6 @@
+name = "Currency exchange block module"
+description = "Adds a currency exchange block"
+package = "All"
+core = "7.x"
+
+dependencies[] = currency_yahoo_finance

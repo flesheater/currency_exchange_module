@@ -1,0 +1,86 @@
+<?php
+/*
+ * @file
+ * Currency exchange module
+ * 
+ */
+
+/**
+ * Implements hook_block_info();
+ */
+function currency_exchange_block_block_info() {
+  
+  $blocks['currency_exchange_block_exchange'] = array(
+    'info' => t('Currency exchange block'),
+  );
+    
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view()
+ */
+function currency_exchange_block_block_view($delta = '') {
+  
+  if ($delta == 'currency_exchange_block_exchange') {
+    $block['subject'] = t('Exchange');
+    $block['content'] = drupal_get_form('currency_exchange_block_block_form');
+  }
+  
+  return $block;
+}
+
+
+/**
+ * The currency exchange form
+ */
+function currency_exchange_block_block_form($form, &$form_state) {
+  $form = array();
+
+  $change = new CurrencyYahooFinanceCurrencyExchanger();
+  $codes = $change::currencyCodes();
+
+  $form['currency_convert']['qua'] = array(
+    '#type' => 'textfield',
+    '#title' => t('How much'),
+    '#size' => 8,
+  );
+
+  $form['currency_convert']['from'] = array(
+    '#type' => 'select',
+    '#title' => t('from'),
+    '#options' => drupal_map_assoc($codes),
+
+  );
+
+  $form['currency_convert']['to'] = array(
+    '#type' => 'select',
+    '#title' => t('to'),
+    '#options' => drupal_map_assoc($codes),
+  );
+
+  $form['currency_convert']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t("Convert"),
+    '#ajax' => array(
+      'callback' => 'currency_exchange_block_block_callback',
+    ),
+    '#suffix' => "<div id='currency_convert_result'></div>",
+
+  );
+
+  return $form;
+}
+
+
+
+/**
+ * The currency exchange form ajax callback
+ */
+function currency_exchange_block_block_callback($form, $form_state) {
+  $commands = array();
+  $change = new CurrencyYahooFinanceCurrencyExchanger();
+  $rate = $change::load( $form_state['values']['from'], $form_state['values']['to']);
+  $commands[] = ajax_command_replace("#currency_convert_result", "<div id='currency_convert_result'> " . $form_state['values']['qua'] * $rate . "</div>");
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
